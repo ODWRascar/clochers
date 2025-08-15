@@ -1,10 +1,10 @@
 'use client';
-import { lecturesDuJour } from '@/data/lectures';
-import { evenements } from '@/data/events';
-import { clochers } from '@/data/clochers';
-import Header from '@/components/Header';
-import SectionTitle from '@/components/SectionTitle';
-import EventCard from '@/components/EventCard';
+import { lecturesDuJour } from '../data/lectures';
+import { evenements } from '../data/events';
+import { clochers } from '../data/clochers';
+import Header from '../components/Header';
+import SectionTitle from '../components/SectionTitle';
+import EventCard from '../components/EventCard';
 import { BookOpenText, CalendarDays, MapPin, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
@@ -15,6 +15,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-paper">
       <Header />
+
       <section className="relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 py-10 md:py-16 grid md:grid-cols-2 gap-10">
           <div className="flex flex-col justify-center">
@@ -35,11 +36,16 @@ export default function HomePage() {
               <span className="pill">Mode hors-ligne (à venir)</span>
             </div>
           </div>
+
           <div className="md:pl-8">
             <div className="card overflow-hidden">
               <div className="h-20 w-full hero-grad rounded-t-3xl" />
               <div className="p-6" id="lectures">
-                <SectionTitle icon={<BookOpenText className="h-5 w-5 text-primary" />} title="Lectures du jour" subtitle={`${lecturesDuJour.date} · ${lecturesDuJour.fete}`} />
+                <SectionTitle
+                  icon={<BookOpenText className="h-5 w-5 text-primary" />}
+                  title="Lectures du jour"
+                  subtitle={`${lecturesDuJour.date} · ${lecturesDuJour.fete}`}
+                />
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {lecturesDuJour.lectures.map((l, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl border" style={{ borderColor: "#ECE9E3", background: "white" }}>
@@ -62,6 +68,7 @@ export default function HomePage() {
       <section className="py-8 md:py-12" id="events">
         <div className="max-w-6xl mx-auto px-4">
           <SectionTitle icon={<CalendarDays className="h-5 w-5 text-primary" />} title="Événements à venir" subtitle="Par clocher et par date" />
+
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="col-span-1">
               <label className="text-sm mb-2 block">Choisir un clocher</label>
@@ -75,7 +82,8 @@ export default function HomePage() {
             </div>
             <div className="col-span-1">
               <label className="text-sm mb-2 block">Rechercher</label>
-              <input className="w-full rounded-2xl border px-4 py-2" style={{ borderColor: "#E5E2DC" }}
+              <input
+                className="w-full rounded-2xl border px-4 py-2" style={{ borderColor: "#E5E2DC" }}
                 placeholder="Ex: veillée, concert…"
                 value={search}
                 onChange={e=>setSearch(e.target.value)}
