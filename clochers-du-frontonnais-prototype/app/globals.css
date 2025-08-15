@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+html, body { @apply bg-paper text-ink; }
+
+.card { @apply rounded-3xl shadow-sm bg-white border border-[#E8E5DF]; }
+.dark .card { @apply bg-neutral-900 border-neutral-800 text-neutral-100; }
+
+.btn { @apply inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-medium transition; }
+.btn-primary { @apply text-white; background: linear-gradient(135deg, #19565E, #1F6E76); }
+.btn-outline { @apply border; border-color: #19565E; color: #19565E; }
+
+.pill { @apply px-3 py-1 rounded-full text-xs font-medium; background: #FFE7B8; color: #2C3E3F; }
+.badge { @apply inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-paper text-ink border border-[#E8E5DF]; }
+
+.hero-grad {
+  background: radial-gradient(1200px 400px at -10% -10%, #FFE7B8 0%, #F8F7F3 60%), linear-gradient(135deg, #19565E 0%, #1F6E76 100%);
+}
+.dark .hero-grad {
+  background: radial-gradient(1200px 400px at -10% -10%, #584118 0%, #111 60%), linear-gradient(135deg, #0b2f33 0%, #123e43 100%);
+}
+blockquote.quote { @apply p-4 rounded-2xl text-sm bg-paper; }
+.dark blockquote.quote { @apply bg-neutral-900 text-neutral-100; }
