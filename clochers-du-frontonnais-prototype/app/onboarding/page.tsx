@@ -1,9 +1,10 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { clochers } from '@/data/clochers';
+import { clochers } from '../../data/clochers';
 
 export default function Onboarding() {
   const router = useRouter();
+
   function save(e: any) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -15,6 +16,7 @@ export default function Onboarding() {
       alert('Choisissez un clocher dans la liste.');
     }
   }
+
   return (
     <div className="min-h-screen bg-paper">
       <div className="max-w-md mx-auto px-4 py-10">
@@ -25,7 +27,7 @@ export default function Onboarding() {
             <label className="text-sm mb-2 block">Mon clocher</label>
             <select name="clocher" className="w-full appearance-none rounded-2xl border px-4 py-2" style={{ borderColor: "#E5E2DC" }}>
               <option value="">—</option>
-              {clochers.map((c: string) => <option key={c} value={c}>{c}</option>)}
+              {clochers.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <button className="btn btn-primary rounded-2xl w-full">Valider</button>
