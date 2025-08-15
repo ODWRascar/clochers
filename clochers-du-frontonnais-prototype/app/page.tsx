@@ -12,8 +12,23 @@ import { lecturesDuJour as lecturesMock } from '../data/lectures';
 import { evenements } from '../data/events';
 import { clochers } from '../data/clochers';
 
+type AdminContent = {
+  text?: string;
+  image?: string; // URL publique optionnelle
+};
+
 export default function HomePage() {
-  // --- Évangile & lectures : charge le texte intégral depuis /api/lectures
+  // --- Contenu admin (via /api/content)
+  const [adminContent, setAdminContent] = useState<AdminContent | null>(null);
+
+  useEffect(() => {
+    fetch('/api/content')
+      .then((r) => r.json())
+      .then((j) => setAdminContent(j || null))
+      .catch(() => setAdminContent(null));
+  }, []);
+
+  // --- Lectures du jour (AELF)
   const [lecturesData, setLecturesData] = useState<any>(null);
   const [lecturesError, setLecturesError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +48,7 @@ export default function HomePage() {
       });
   }, []);
 
-  // --- Recherche événements (simple)
+  // --- Recherche événements
   const [search, setSearch] = useState('');
   const filtered = evenements.filter((e) =>
     e.titre.toLowerCase().includes(search.toLowerCase())
@@ -50,10 +65,30 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-5xl font-extrabold leading-tight">
               Vivre la paroisse,<br />à portée de main
             </h2>
+
+            {/* Texte piloté par l’admin si présent, sinon fallback par défaut */}
             <p className="mt-4 text-base md:text-lg">
-              Lectures du jour, horaires des messes, <em>mot du prêtre</em>, événements des clochers
-              et carte interactive. Une app douce et lisible, pour tous les âges.
+              {adminContent?.text ? (
+                <span dangerouslySetInnerHTML={{ __html: sanitize(adminContent.text) }} />
+              ) : (
+                <>
+                  Lectures du jour, horaires des messes, <em>mot du prêtre</em>, événements des clochers
+                  et carte interactive. Une app douce et lisible, pour tous les âges.
+                </>
+              )}
             </p>
+
+            {/* Image admin optionnelle */}
+            {adminContent?.image ? (
+              <div className="mt-4">
+                <img
+                  src={adminContent.image}
+                  alt="Accueil"
+                  className="rounded-2xl w-full max-w-md object-cover"
+                />
+              </div>
+            ) : null}
+
             <div className="mt-6 flex items-center gap-3">
               <a className="btn btn-primary rounded-2xl" href="#lectures">
                 Activer les lectures du jour
@@ -86,7 +121,6 @@ export default function HomePage() {
                       <p className="text-red-600">
                         Erreur de chargement des lectures (AELF). Affichage du contenu de secours.
                       </p>
-                      {/* Fallback minimal si l’API échoue : on remonte le mock existant */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {lecturesMock.lectures.map((l, i) => (
                           <div
@@ -123,7 +157,7 @@ export default function HomePage() {
             subtitle="Par clocher et par date"
           />
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="col-span-1">
               <label className="text-sm mb-2 block">Choisir un clocher</label>
               <div className="relative">
@@ -270,4 +304,9 @@ export default function HomePage() {
       </footer>
     </div>
   );
+}
+
+/** Petite sanitation (évite des balises dangereuses si tu colles du HTML dans l’admin) */
+function sanitize(html: string) {
+  return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
 }
