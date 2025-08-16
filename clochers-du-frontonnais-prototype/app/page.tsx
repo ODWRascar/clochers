@@ -73,7 +73,7 @@ export default function HomePage() {
               ) : (
                 <>
                   Lectures du jour, horaires des messes, <em>mot du prêtre</em>, événements des clochers
-                  et carte interactive. Une app douce et lisible, pour tous les âges.
+                  et tout ce qu'il vous faut pour vivre votre foi au quotidien.
                 </>
               )}
             </p>
