@@ -1,4 +1,3 @@
-// app/login/page.tsx
 'use client';
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -10,7 +9,7 @@ export default function LoginPage() {
   const sp = useSearchParams();
   const router = useRouter();
 
-  async function submit(e: any) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
     const res = await fetch("/api/auth/login", {
@@ -22,8 +21,9 @@ export default function LoginPage() {
       setErr("Rôle ou mot de passe incorrect.");
       return;
     }
-    const next = sp.get("next") || "/admin";
-    router.push(next);
+    // ✅ robuste même si sp est indéfini en build strict
+    const nextParam = sp?.get("next") ?? "/admin";
+    router.push(nextParam);
   }
 
   return (
