@@ -1,25 +1,66 @@
 'use client';
-import LogoMark from './LogoMark';
-import ThemeToggle from './ThemeToggle';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useClocher } from './useClocher';
 
 export default function Header() {
-  const { clocher } = useClocher();
+  const [role, setRole] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // On tente de récupérer la session; si non connecté, 401 => role null
+    fetch('/api/auth/me')
+      .then(async (r) => {
+        setChecking(false);
+        if (!r.ok) return;
+        const j = await r.json();
+        setRole(j.role || null);
+      })
+      .catch(() => setChecking(false));
+  }, []);
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    // simple refresh pour remettre l'UI à zéro
+    window.location.href = '/';
+  }
+
   return (
-    <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b" style={{ borderColor: "#E8E5DF" }}>
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <LogoMark />
-          <div>
-            <Link href="/" className="text-lg md:text-2xl font-bold tracking-tight">Clochers du Frontonnais</Link>
-            <p className="text-xs md:text-sm text-primary">Ensemble paroissial Fronton – Villemur et environs</p>
-          </div>
-        </div>
-        <div className="hidden md:flex items-center gap-2">
-          {clocher && <span className="pill">Mon clocher : {clocher}</span>}
-          <Link className="btn btn-outline rounded-2xl" href="/onboarding">Choisir mon clocher</Link>
-          <ThemeToggle />
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b" style={{ borderColor: '#E8E5DF' }}>
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        {/* Logo + nom */}
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl">🏰</span>
+          <span className="font-semibold">Clochers du Frontonnais</span>
+        </Link>
+
+        {/* Navigation principale (quelques liens) */}
+        <nav className="hidden md:flex items-center gap-5 text-sm">
+          <Link href="/events" className="hover:underline">Événements</Link>
+          <Link href="/decouvrir-la-messe" className="hover:underline">Découvrir la messe</Link>
+        </nav>
+
+        {/* Espace à droite : Connexion / Espace / Déconnexion */}
+        <div className="flex items-center gap-2">
+          {!checking && role && (
+            <>
+              <span className="hidden sm:inline-flex text-xs px-2 py-1 rounded-full border" style={{ borderColor: '#E5E2DC' }}>
+                Connecté&nbsp;: {role}
+              </span>
+              <Link href="/admin" className="btn btn-outline rounded-xl text-sm">Mon espace</Link>
+              <button onClick={logout} className="btn btn-primary rounded-xl text-sm">Déconnexion</button>
+            </>
+          )}
+
+          {!checking && !role && (
+            <Link
+              href="/login"
+              className="text-sm opacity-80 hover:opacity-100 underline underline-offset-4"
+              title="Se connecter"
+            >
+              Connexion
+            </Link>
+          )}
         </div>
       </div>
     </header>
