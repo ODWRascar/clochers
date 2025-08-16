@@ -1,4 +1,6 @@
 // app/api/auth/login/route.ts
+export const runtime = 'nodejs';
+
 import { NextResponse } from "next/server";
 import { signSession } from "../../../../lib/auth";
 
