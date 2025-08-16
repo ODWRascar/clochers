@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { BookOpenText, CalendarDays, MapPin, MessageSquare, Pencil, Save, X, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BookOpenText, CalendarDays, MapPin, MessageSquare } from 'lucide-react';
 
 import Header from '../components/Header';
 import SectionTitle from '../components/SectionTitle';
@@ -12,243 +12,95 @@ import { lecturesDuJour as lecturesMock } from '../data/lectures';
 import { evenements } from '../data/events';
 import { clochers } from '../data/clochers';
 
-// --- Types
-type HomeData = {
-  heroTitle?: string;
-  heroText?: string;
-  images?: string[];
+type AdminContent = {
+  text?: string;
+  image?: string; // URL publique optionnelle
 };
 
-// --- Sanitize ultra-simple (évite script tags)
-function sanitize(html: string) {
-  return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-}
-
 export default function HomePage() {
-  // --- Contenu d'accueil (KV)
-  const [home, setHome] = useState<HomeData | null>(null);
-  const [loadingHome, setLoadingHome] = useState(true);
+  // --- Contenu admin (via /api/content)
+  const [adminContent, setAdminContent] = useState<AdminContent | null>(null);
 
   useEffect(() => {
-    fetch('/api/home')
-      .then(r => r.json())
-      .then(j => setHome(j.data || null))
-      .finally(() => setLoadingHome(false));
+    fetch('/api/content')
+      .then((r) => r.json())
+      .then((j) => setAdminContent(j || null))
+      .catch(() => setAdminContent(null));
   }, []);
 
   // --- Lectures du jour (AELF)
   const [lecturesData, setLecturesData] = useState<any>(null);
   const [lecturesError, setLecturesError] = useState<string | null>(null);
-  const [loadingLectures, setLoadingLectures] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const d = new Date();
-    const date = d.toISOString().slice(0, 10);
+    const date = d.toISOString().slice(0, 10); // YYYY-MM-DD
     fetch(`/api/lectures?date=${date}&zone=romain`)
       .then((r) => r.json())
       .then((json) => {
         setLecturesData(json);
-        setLoadingLectures(false);
+        setLoading(false);
       })
       .catch((e) => {
         setLecturesError(String(e));
-        setLoadingLectures(false);
+        setLoading(false);
       });
   }, []);
 
   // --- Recherche événements
   const [search, setSearch] = useState('');
-  const filtered = useMemo(
-    () => evenements.filter((e) => e.titre.toLowerCase().includes(search.toLowerCase())),
-    [search]
+  const filtered = evenements.filter((e) =>
+    e.titre.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ---------------------------
-  // MODE ADMIN (édition en place)
-  // ---------------------------
-  const [adminOpen, setAdminOpen] = useState(false);     // panneau admin visible ?
-  const [adminEnabled, setAdminEnabled] = useState(false); // édition activée ?
-  const [token, setToken] = useState<string>(() => (typeof window !== 'undefined' ? localStorage.getItem('adminToken') || '' : ''));
-  const [draft, setDraft] = useState<HomeData>({ images: [] });
-  const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (home) {
-      setDraft({
-        heroTitle: home.heroTitle || '',
-        heroText: home.heroText || '',
-        images: Array.isArray(home.images) ? [...home.images] : []
-      });
-    }
-  }, [home]);
-
-  function addImage() {
-    setDraft(d => ({ ...d, images: [...(d.images || []), '' ] }));
-  }
-  function updateImage(i: number, url: string) {
-    const arr = [...(draft.images || [])];
-    arr[i] = url;
-    setDraft({ ...draft, images: arr });
-  }
-  function removeImage(i: number) {
-    const arr = [...(draft.images || [])];
-    arr.splice(i, 1);
-    setDraft({ ...draft, images: arr });
-  }
-
-  async function saveDraft() {
-    setSaving(true);
-    setSaveMsg(null);
-    try {
-      const res = await fetch('/api/admin/home', {
-        method: 'PUT',
-        headers: {
-          'content-type': 'application/json',
-          'authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          heroTitle: draft.heroTitle || '',
-          heroText: draft.heroText || '',
-          images: (draft.images || []).filter(Boolean)
-        })
-      });
-      if (!res.ok) {
-        setSaveMsg("Échec : mot de passe invalide (ADMIN_SECRET) ou erreur serveur.");
-      } else {
-        setSaveMsg('Contenu enregistré ✅');
-        // persiste le token si ok
-        localStorage.setItem('adminToken', token);
-        // maj de l’affichage
-        setHome({ ...draft, images: (draft.images || []).filter(Boolean) });
-        setAdminEnabled(false);
-      }
-    } catch {
-      setSaveMsg("Erreur réseau pendant l'enregistrement.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function cancelEdit() {
-    // revenir aux données actuelles
-    setDraft({
-      heroTitle: home?.heroTitle || '',
-      heroText: home?.heroText || '',
-      images: Array.isArray(home?.images) ? [...(home?.images || [])] : []
-    });
-    setAdminEnabled(false);
-    setSaveMsg(null);
-  }
-
-  // ---------------------------
-
   return (
-    <div className="min-h-screen bg-paper relative">
+    <div className="min-h-screen bg-paper">
       <Header />
-
-      {/* ---- Panneau Admin (toggle + token + actions) ---- */}
-      <AdminBar
-        open={adminOpen}
-        setOpen={setAdminOpen}
-        adminEnabled={adminEnabled}
-        setAdminEnabled={setAdminEnabled}
-        token={token}
-        setToken={setToken}
-        onSave={saveDraft}
-        onCancel={cancelEdit}
-        saving={saving}
-        saveMsg={saveMsg}
-      />
 
       {/* HERO + Lectures */}
       <section className="relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 py-10 md:py-16 grid md:grid-cols-2 gap-10">
           <div className="flex flex-col justify-center">
-            {/* Titre (éditable si admin) */}
-            {!adminEnabled ? (
-              <h2 className="text-3xl md:text-5xl font-extrabold leading-tight">
-                {home?.heroTitle && home.heroTitle.trim().length
-                  ? home.heroTitle
-                  : <>Vivre la paroisse,<br/>à portée de main</>}
-              </h2>
-            ) : (
-              <div className="space-y-2">
-                <label className="text-sm opacity-70">Titre (heroTitle)</label>
-                <input
-                  className="w-full rounded-2xl border px-4 py-2"
-                  style={{ borderColor: '#E5E2DC' }}
-                  value={draft.heroTitle || ''}
-                  onChange={(e) => setDraft({ ...draft, heroTitle: e.target.value })}
-                />
-              </div>
-            )}
+            <h2 className="text-3xl md:text-5xl font-extrabold leading-tight">
+              Vivre la paroisse,<br />à portée de main
+            </h2>
 
-            {/* Texte (éditable si admin) */}
-            {!adminEnabled ? (
-              <p className="mt-4 text-base md:text-lg">
-                {home?.heroText && home.heroText.trim().length ? (
-                  <span dangerouslySetInnerHTML={{ __html: sanitize(home.heroText) }} />
-                ) : (
-                  <>
-                    Lectures du jour, horaires des messes, <em>mot du prêtre</em>, événements des clochers
-                    et carte interactive. Une app douce et lisible, pour tous les âges.
-                  </>
-                )}
-              </p>
-            ) : (
+            {/* Texte piloté par l’admin si présent, sinon fallback par défaut */}
+            <p className="mt-4 text-base md:text-lg">
+              {adminContent?.text ? (
+                <span dangerouslySetInnerHTML={{ __html: sanitize(adminContent.text) }} />
+              ) : (
+                <>
+                  Lectures du jour, horaires des messes, <em>mot du prêtre</em>, événements des clochers
+                  et carte interactive. Une app douce et lisible, pour tous les âges.
+                </>
+              )}
+            </p>
+
+            {/* Image admin optionnelle */}
+            {adminContent?.image ? (
               <div className="mt-4">
-                <label className="text-sm opacity-70">Texte (heroText)</label>
-                <textarea
-                  className="w-full rounded-2xl border px-4 py-2 min-h-[120px]"
-                  style={{ borderColor: '#E5E2DC' }}
-                  value={draft.heroText || ''}
-                  onChange={(e) => setDraft({ ...draft, heroText: e.target.value })}
+                <img
+                  src={adminContent.image}
+                  alt="Accueil"
+                  className="rounded-2xl w-full max-w-md object-cover"
                 />
               </div>
-            )}
-
-            {/* Galerie images (édition inline) */}
-            {!adminEnabled ? (
-              home?.images?.length ? (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {home.images.map((src: string, i: number) => (
-                    <img key={i} src={src} alt={`Accueil ${i+1}`} className="rounded-2xl object-cover w-full h-28 md:h-36" />
-                  ))}
-                </div>
-              ) : null
-            ) : (
-              <div className="mt-6">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm opacity-70">Images (URLs publiques)</label>
-                  <button type="button" onClick={addImage} className="btn btn-outline rounded-2xl">+ Ajouter</button>
-                </div>
-                <div className="space-y-2 mt-2">
-                  {(draft.images || []).map((u, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <input
-                        className="flex-1 border rounded-2xl px-3 py-2"
-                        placeholder="https://…"
-                        value={u}
-                        onChange={(e) => updateImage(i, e.target.value)}
-                      />
-                      <button type="button" className="btn btn-outline rounded-2xl" onClick={() => removeImage(i)}>Supprimer</button>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs opacity-70 mt-2">
-                  Astuce : héberge tes images sur un service public (Cloudinary, Imgur, etc.) et colle l’URL ici.
-                </p>
-              </div>
-            )}
+            ) : null}
 
             <div className="mt-6 flex items-center gap-3">
               <a className="btn btn-primary rounded-2xl" href="#lectures">
-                Voir les lectures du jour
+                Activer les lectures du jour
               </a>
               <a className="btn btn-outline rounded-2xl" href="#events">
                 Voir les événements
               </a>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <span className="pill">Choisir mon clocher</span>
+              <span className="pill">Notifications (à venir)</span>
+              <span className="pill">Mode hors-ligne (à venir)</span>
             </div>
           </div>
 
@@ -263,7 +115,7 @@ export default function HomePage() {
                 />
 
                 <div className="mt-4">
-                  {loadingLectures && <p>Chargement…</p>}
+                  {loading && <p>Chargement…</p>}
                   {lecturesError && (
                     <>
                       <p className="text-red-600">
@@ -286,7 +138,7 @@ export default function HomePage() {
                       </blockquote>
                     </>
                   )}
-                  {!loadingLectures && !lecturesError && lecturesData && (
+                  {!loading && !lecturesError && lecturesData && (
                     <LecturesDuJour payload={lecturesData} />
                   )}
                 </div>
@@ -305,7 +157,7 @@ export default function HomePage() {
             subtitle="Par clocher et par date"
           />
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="col-span-1">
               <label className="text-sm mb-2 block">Choisir un clocher</label>
               <div className="relative">
@@ -452,4 +304,9 @@ export default function HomePage() {
       </footer>
     </div>
   );
+}
+
+/** Petite sanitation (évite des balises dangereuses si tu colles du HTML dans l’admin) */
+function sanitize(html: string) {
+  return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
 }
